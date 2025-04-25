@@ -12,11 +12,11 @@
 	"developer": "Hbg1010",
 	"description": "Hide new best GUI on pause menu",
 	"links": {
-		"source": "",
+		"source": "https://github.com/Hbg1010/Toggle-New-Best-Visibility",
 		"community": "https://discord.gg/V4xQnNxfNh"
 	},
 	"issues": {
-		"url": "https://github.com/Hbg1010/Icon-Steal/issues",
+		"url": "https://github.com/Hbg1010/Toggle-New-Best-Visibility/issues",
 		"info": "If you find any bugs, or have any feature requests, please post them on this github!"
 	},
 	"settings": {
@@ -36,18 +36,21 @@
 			"type": "bool",
 			"name": "Show on resume",
 			"description": "Show The new best UI when resuming a level.",
-			"default": true
+			"default": false
 		},
 		"SaveAcrossLevels": {
 			"type": "bool",
 			"name": "Save Visibility Settings",
 			"default": false,
-			"description": "Saves Your New Best visibility setting across levels"
+			"description": "Saves Your New Best visibility setting across levels. I'm unsure if this should be a default."
 		}
 	},
 	"tags": [
 		"offline",
-		"gameplay",
-		"enhancement"
-	]
+		"interface",
+		"customization"
+	],
+	"dependencies": {
+  		"geode.node-ids": ">=v1.17.0"
+ 	}
 }
