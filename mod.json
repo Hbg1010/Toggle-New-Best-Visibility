@@ -1,0 +1,53 @@
+{
+	"geode": "4.3.1",
+	"gd": {
+		"win": "2.2074",
+		"android": "2.2074",
+		"mac": "2.2074",
+		"ios": "2.2074"
+	},
+	"id": "hbg1010.hidenewbest",
+	"name": "New Best Visibility Toggle",
+	"version": "v1.0.0",
+	"developer": "Hbg1010",
+	"description": "Hide new best GUI on pause menu",
+	"links": {
+		"source": "",
+		"community": "https://discord.gg/V4xQnNxfNh"
+	},
+	"issues": {
+		"url": "https://github.com/Hbg1010/Icon-Steal/issues",
+		"info": "If you find any bugs, or have any feature requests, please post them on this github!"
+	},
+	"settings": {
+		"enable": {
+			"type": "bool",
+			"name": "Enable",
+			"description": "Soft toggle for the mod. Nothing will happen on pause if this is disabled.",
+			"default": true
+		},
+		"showOnlyOnBest": {
+			"type": "bool",
+			"name": "Show only on best",
+			"description": "Only show the hide button on pause menu when a new best is achieved.",
+			"default": true
+		},
+		"showOnResume": {
+			"type": "bool",
+			"name": "Show on resume",
+			"description": "Show The new best UI when resuming a level.",
+			"default": true
+		},
+		"SaveAcrossLevels": {
+			"type": "bool",
+			"name": "Save Visibility Settings",
+			"default": false,
+			"description": "Saves Your New Best visibility setting across levels"
+		}
+	},
+	"tags": [
+		"offline",
+		"gameplay",
+		"enhancement"
+	]
+}
