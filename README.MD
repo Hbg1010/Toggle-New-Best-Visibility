@@ -9,3 +9,7 @@ If you run into any problems with the mod, please report them on the github issu
 Hbg: Made the mod
 
 Ery: Wrote the code to access the New Best Node in [Death Screen Tweaks](https://github.com/RayDeeUx/DeathScreenTweaks/blob/main/src/PlayLayer.cpp)
+
+
+
+This Geode mod is licensed under LGPLv2.
