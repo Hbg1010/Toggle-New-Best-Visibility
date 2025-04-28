@@ -70,6 +70,12 @@ class $modify(bestDisabler, PauseLayer) {
         auto hideBtn = CCMenuItemSpriteExtra::create(spr, this, menu_selector(bestDisabler::onHideBtn));
         onHideBtn(hideBtn); // this is used to set the menu to the correct state
         hideBtn->setPositionX(this->getChildByID("bottom-button-menu")->getContentWidth()/2);
+
+        #ifdef GEODE_IS_MOBILE
+        hideBtn->setPositionY(hideBtn->getContentHeight());
+        #else
+        hideBtn->setPositionY(hideBtn->getContentHeight()/2);
+        #endif
         this->getChildByID("bottom-button-menu")->addChild(hideBtn);
 
         hideBtn->setID("Hide_Best_Btn"_spr);
