@@ -72,9 +72,9 @@ class $modify(bestDisabler, PauseLayer) {
         hideBtn->setPositionX(this->getChildByID("bottom-button-menu")->getContentWidth()/2);
 
         #ifdef GEODE_IS_MOBILE
-        hideBtn->setPositionY(hideBtn->getContentHeight());
+        hideBtn->setPositionY(hideBtn->getScaledContentHeight());
         #else
-        hideBtn->setPositionY(hideBtn->getContentHeight()/2);
+        hideBtn->setPositionY(hideBtn->getScaledContentHeight()/2);
         #endif
         this->getChildByID("bottom-button-menu")->addChild(hideBtn);
 
