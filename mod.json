@@ -8,7 +8,7 @@
 	},
 	"id": "hbg1010.hidenewbest",
 	"name": "New Best Visibility Toggle",
-	"version": "v1.0.0",
+	"version": "v1.0.1",
 	"developer": "Hbg1010",
 	"description": "Hide new best GUI on pause menu",
 	"links": {
