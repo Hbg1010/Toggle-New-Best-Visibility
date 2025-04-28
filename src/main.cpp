@@ -15,7 +15,7 @@ class $modify(bestFinder, PlayLayer) {
             if (!child || child == this->m_uiLayer) continue; // skip UILayer
 			if (child->getZOrder() != 100) continue;
 			if (child->getChildrenCount() < 2) continue;
-            child->setID("NewBestNode");
+            child->setUserObject("new-best-node"_spr, CCBool::create(true)); // set the user object to identify the node
 			break;
         }
     }
@@ -26,6 +26,7 @@ class $modify(bestDisabler, PauseLayer) {
 
     struct Fields {
         bool onOff;
+        CCNode* NewBestNode;
     };
 
     void customSetup() {
@@ -35,23 +36,31 @@ class $modify(bestDisabler, PauseLayer) {
 
         auto fields = m_fields.self(); // gets the ptr
 
+        if (auto pl = PlayLayer::get()) {
+            CCArrayExt<CCNode*> children = pl->getChildren();
+            for (auto* child : children) {
+                if (child->getUserObject("new-best-node"_spr)) {
+                    m_fields->NewBestNode = child;
+                    break;
+                }
+            }
+        } else {
+            return;
+        }
+        
         if (modPtr->getSettingValue<bool>("showOnlyOnBest")) {
-            if (auto pl = PlayLayer::get()) {
-                if (auto bestNode = pl->getChildByID("NewBestNode")) {
-                    if (modPtr->getSettingValue<bool>("SaveAcrossLevels")) {
-                        fields->onOff = !modPtr->getSavedValue<bool>("visibleBest", true);
-                    } else {
-                        fields->onOff = !bestNode->isVisible();
-                    }
+            if (m_fields->NewBestNode) {
+                if (modPtr->getSettingValue<bool>("SaveAcrossLevels")) {
+                    fields->onOff = !modPtr->getSavedValue<bool>("visibleBest", true);
                 } else {
-                    return;
+                    fields->onOff = !m_fields->NewBestNode->isVisible();
                 }
             }
         } else {
             if (modPtr->getSettingValue<bool>("SaveAcrossLevels")) {
                 fields->onOff = !modPtr->getSavedValue<bool>("visibleBest", true);
             } else {
-                fields->onOff = true;
+                fields->onOff = false; // this will get inverted and offset the button wooo
             }
         }
 
@@ -69,8 +78,8 @@ class $modify(bestDisabler, PauseLayer) {
     void toggleLayerDetails(bool mode) {
         // apply changes to play layer
         if (auto pl = PlayLayer::get()) {    
-            if (auto bestNode = pl->getChildByID("NewBestNode")) {
-                bestNode->setVisible(mode);
+            if (m_fields->NewBestNode) {
+                m_fields->NewBestNode->setVisible(mode);
             }
 
             if (auto currency = pl->getChildByType<CurrencyRewardLayer>(0)) {
