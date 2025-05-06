@@ -1,4 +1,5 @@
 # New Best Visibility Toggle
+[Mod Page](https://geode-sdk.org/mods/hbg1010.hidenewbest)
 
 This mod adds a button to the pause layer to hide gui added on obtaining a new best. Useful for taking screenshots and viewing hitboxes!
 
