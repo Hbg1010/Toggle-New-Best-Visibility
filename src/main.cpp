@@ -2,12 +2,30 @@
 using namespace geode::prelude;
 
 #include <Geode/modify/PlayLayer.hpp>
+
+void toggleLayerDetails(bool mode);
+
+bool isCurrentlyHidden;
+
 class $modify(bestFinder, PlayLayer) {
+
+    struct Fields {
+        CCNode* NewBestNode;
+        CCNode* FadeLayer;
+        bool saveAcrossAttempts;
+    };
+
+    bool init(GJGameLevel* level, bool useReplay, bool dontCreateObjects) {
+        if (!PlayLayer::init(level, useReplay, dontCreateObjects)) return false;
+        // if people want this to be editable between attempts I could do that later...
+        m_fields->saveAcrossAttempts = Mod::get()->getSettingValue<bool>("SaveAcrossAttempts");
+        return true;
+    }
+
     void showNewBest(bool p0, int p1, int p2, bool p3, bool p4, bool p5) {
         PlayLayer::showNewBest(p0, p1, p2, p3, p4, p5);
 
         auto children = this->getChildren();
-        CCNode* lastChild = nullptr;
 
         for (int i = this->getChildrenCount() - 1; i >= 0; i--) {
             auto child = static_cast<CCNode*>(children->objectAtIndex(i));
@@ -16,59 +34,101 @@ class $modify(bestFinder, PlayLayer) {
 			if (child->getZOrder() != 100) continue;
 			if (child->getChildrenCount() < 2) continue;
             child->setUserObject("new-best-node"_spr, CCBool::create(true)); // set the user object to identify the node
+            m_fields->NewBestNode = child;
 			break;
         }
+
+        if (Mod::get()->getSettingValue<bool>("HideWithoutPause")) {
+            toggleLayerDetails(isCurrentlyHidden);
+        }
+    }
+
+    void resetLevel() {
+        PlayLayer::resetLevel();
+        if (!isCurrentlyHidden && !m_fields->saveAcrossAttempts) isCurrentlyHidden = true;
+        if (m_fields->NewBestNode != nullptr) {
+            m_fields->NewBestNode = nullptr;
+            m_fields->FadeLayer = nullptr;
+        }
+    }
+    
+    void onExit() {
+        if (Mod::get()->getSettingValue<bool>("SaveAcrossLevels")) {
+            Mod::get()->setSavedValue<bool>("visibleBest", isCurrentlyHidden);
+        } else {
+            isCurrentlyHidden = true;
+        }
+        PlayLayer::onExit();
+    }
+
+    bool isNewBest() {
+        return m_fields->NewBestNode != nullptr;
+    }
+
+    CCNode* getNewBestNode() {
+        return m_fields->NewBestNode;
+    }
+
+    // I don't love this code, however, it only generates the fade layer after a bit
+    // and it cannot be indexed starting from 0 for whatever reason.
+    CCNode* getFadeLayer() {
+        if (m_fields->FadeLayer == nullptr) {
+            auto children = this->getChildren();
+            for (int i = this->getChildrenCount() - 1; i >= 0; i--) {
+                auto child = static_cast<CCNode*>(children->objectAtIndex(i));
+                if (!child || child == this->m_uiLayer) continue; // skip UILayer
+                if (child->getZOrder() != 99) continue;
+                if (child->getChildrenCount() > 0) continue;
+                m_fields->FadeLayer = child;
+                break;
+            }
+        }
+
+        return m_fields->FadeLayer;
     }
 };
 
+// hides new best
+void toggleLayerDetails(bool mode) {
+    // apply changes to play layer
+    bestFinder* pl = reinterpret_cast<bestFinder*>(bestFinder::get());
+    if (pl && pl->isNewBest()) {    
+        if (auto BN = pl->getNewBestNode()) {
+            if (BN != nullptr) BN->setVisible(mode);
+        }
+
+        if (auto currency = pl->getChildByType<CurrencyRewardLayer>(0)) {
+            if (currency != nullptr) currency->setVisible(mode);
+        }
+
+        if (auto FadeLay = pl->getFadeLayer()) {
+            log::debug("x");
+            if (FadeLay != nullptr) FadeLay->setVisible(mode);        
+        }
+    }
+}
+
 #include <Geode/modify/PauseLayer.hpp>
 class $modify(bestDisabler, PauseLayer) {
-
-    struct Fields {
-        bool onOff;
-        CCNode* NewBestNode;
-    };
 
     void customSetup() {
         PauseLayer::customSetup();
         auto modPtr = Mod::get();
         if (!modPtr->getSettingValue<bool>("enable")) return;
 
-        auto fields = m_fields.self(); // gets the ptr
-
-        if (auto pl = PlayLayer::get()) {
-            CCArrayExt<CCNode*> children = pl->getChildren();
-            for (auto* child : children) {
-                if (child->getUserObject("new-best-node"_spr)) {
-                    m_fields->NewBestNode = child;
-                    break;
-                }
-            }
+        // checks if the playlayer exists + if there's a new best (bc of a setting)
+        if (bestFinder* pl = reinterpret_cast<bestFinder*>(bestFinder::get())) {
+            if (modPtr->getSettingValue<bool>("showOnlyOnBest") && !pl->isNewBest()) return;
         } else {
             return;
         }
         
-        if (modPtr->getSettingValue<bool>("showOnlyOnBest")) {
-            if (m_fields->NewBestNode) {
-                if (modPtr->getSettingValue<bool>("SaveAcrossLevels")) {
-                    fields->onOff = !modPtr->getSavedValue<bool>("visibleBest", true);
-                } else {
-                    fields->onOff = !m_fields->NewBestNode->isVisible();
-                }
-            }
-        } else {
-            if (modPtr->getSettingValue<bool>("SaveAcrossLevels")) {
-                fields->onOff = !modPtr->getSavedValue<bool>("visibleBest", true);
-            } else {
-                fields->onOff = false; // this will get inverted and offset the button wooo
-            }
-        }
-
         // create the button
         auto spr = CCSprite::createWithSpriteFrameName("GJ_newBest_001.png");
         spr->setScale(0.5f);
         auto hideBtn = CCMenuItemSpriteExtra::create(spr, this, menu_selector(bestDisabler::onHideBtn));
-        onHideBtn(hideBtn); // this is used to set the menu to the correct state
+        enableSprite(hideBtn, isCurrentlyHidden);
+        toggleLayerDetails(isCurrentlyHidden);
         hideBtn->setPositionX(this->getChildByID("bottom-button-menu")->getContentWidth()/2);
 
         #ifdef GEODE_IS_MOBILE
@@ -77,29 +137,14 @@ class $modify(bestDisabler, PauseLayer) {
         hideBtn->setPositionY(hideBtn->getScaledContentHeight()/2);
         #endif
         this->getChildByID("bottom-button-menu")->addChild(hideBtn);
-
+        
         hideBtn->setID("Hide_Best_Btn"_spr);
-    }
-
-    void toggleLayerDetails(bool mode) {
-        // apply changes to play layer
-        if (auto pl = PlayLayer::get()) {    
-            if (m_fields->NewBestNode) {
-                m_fields->NewBestNode->setVisible(mode);
-            }
-
-            if (auto currency = pl->getChildByType<CurrencyRewardLayer>(0)) {
-                currency->setVisible(mode);
-            }
-        }
     }
  
     void onHideBtn(CCObject* sender) {
-        bool& onOff = m_fields->onOff;
-        onOff = !onOff;
-        Mod::get()->setSavedValue<bool>("visibleBest", onOff);
-        enableSprite(sender, onOff);
-        toggleLayerDetails(onOff);
+        isCurrentlyHidden = !isCurrentlyHidden;
+        enableSprite(sender, isCurrentlyHidden);
+        toggleLayerDetails(isCurrentlyHidden);
     } 
 
     // sets the enabled sprite color
@@ -123,3 +168,11 @@ class $modify(bestDisabler, PauseLayer) {
         if (Mod::get()->getSettingValue<bool>("showOnResume")) toggleLayerDetails(true);
     }
 };
+
+$on_mod(Loaded) {
+    if (Mod::get()->getSettingValue<bool>("SaveAcrossLevels")) {
+        isCurrentlyHidden = Mod::get()->getSavedValue<bool>("visibleBest", true);
+    } else {
+        isCurrentlyHidden = true;
+    }
+}

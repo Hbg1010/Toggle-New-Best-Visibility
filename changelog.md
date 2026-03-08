@@ -1,3 +1,12 @@
+# 1.0.3
+- 2.2081 support
+- Rewrote a lot of the mod 
+- Hides the fade layer that occures on new best
+- Settings:
+    - Added Toggle between attempts
+    - Added a setting allowing hiding best to be persistent without pausing the game 
+- Added jitless iOS support I guess
+
 # 1.0.2
 - Adjusted button placement
     - Mobile has buttons raised slightly more to avoid swiping up
