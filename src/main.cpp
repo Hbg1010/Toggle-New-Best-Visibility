@@ -102,7 +102,6 @@ void toggleLayerDetails(bool mode) {
         }
 
         if (auto FadeLay = pl->getFadeLayer()) {
-            log::debug("x");
             if (FadeLay != nullptr) FadeLay->setVisible(mode);        
         }
     }
