@@ -1,4 +1,7 @@
-# 1.0.3
+# 2.0.1
+- Added setting to automatically hide new bests
+
+# 2.0.0
 - 2.2081 support
 - Rewrote a lot of the mod 
 - Hides the fade layer that occures on new best

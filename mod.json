@@ -8,7 +8,7 @@
 	},
 	"id": "hbg1010.hidenewbest",
 	"name": "New Best Visibility Toggle",
-	"version": "v2.0.0",
+	"version": "v2.0.1",
 	"developer": "Hbg1010",
 	"description": "Hide new best GUI on pause menu",
 	"links": {
@@ -37,6 +37,13 @@
 			"name": "Show on resume",
 			"description": "Show The new best display when resuming a level.",
 			"default": false
+		},
+		"HideByDefault": {
+			"type": "bool",
+			"name": "Hide Best By Default",
+			"default": false,
+			"description": "Sets hiding new bests to false by default. If you activate save across levels, this will be ignored",
+			"enable-if": "!SaveAcrossLevels"
 		},
 		"SaveAcrossAttempts": {
 			"type": "bool",

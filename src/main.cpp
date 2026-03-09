@@ -5,7 +5,7 @@ using namespace geode::prelude;
 
 void toggleLayerDetails(bool mode);
 
-bool isCurrentlyHidden;
+bool isCurrentlyVisible;
 
 class $modify(bestFinder, PlayLayer) {
 
@@ -18,7 +18,13 @@ class $modify(bestFinder, PlayLayer) {
     bool init(GJGameLevel* level, bool useReplay, bool dontCreateObjects) {
         if (!PlayLayer::init(level, useReplay, dontCreateObjects)) return false;
         // if people want this to be editable between attempts I could do that later...
+        Mod* ModPtr = Mod::get();
         m_fields->saveAcrossAttempts = Mod::get()->getSettingValue<bool>("SaveAcrossAttempts");
+
+        if (!ModPtr->getSettingValue<bool>("SaveAcrossLevels")) {
+            isCurrentlyVisible = !ModPtr->getSettingValue<bool>("HideByDefault");
+        }
+
         return true;
     }
 
@@ -39,13 +45,13 @@ class $modify(bestFinder, PlayLayer) {
         }
 
         if (Mod::get()->getSettingValue<bool>("HideWithoutPause")) {
-            toggleLayerDetails(isCurrentlyHidden);
+            toggleLayerDetails(isCurrentlyVisible);
         }
     }
 
     void resetLevel() {
         PlayLayer::resetLevel();
-        if (!isCurrentlyHidden && !m_fields->saveAcrossAttempts) isCurrentlyHidden = true;
+        if (!isCurrentlyVisible && !m_fields->saveAcrossAttempts) isCurrentlyVisible = true;
         if (m_fields->NewBestNode != nullptr) {
             m_fields->NewBestNode = nullptr;
             m_fields->FadeLayer = nullptr;
@@ -54,9 +60,7 @@ class $modify(bestFinder, PlayLayer) {
     
     void onExit() {
         if (Mod::get()->getSettingValue<bool>("SaveAcrossLevels")) {
-            Mod::get()->setSavedValue<bool>("visibleBest", isCurrentlyHidden);
-        } else {
-            isCurrentlyHidden = true;
+            Mod::get()->setSavedValue<bool>("visibleBest", isCurrentlyVisible);
         }
         PlayLayer::onExit();
     }
@@ -126,8 +130,8 @@ class $modify(bestDisabler, PauseLayer) {
         auto spr = CCSprite::createWithSpriteFrameName("GJ_newBest_001.png");
         spr->setScale(0.5f);
         auto hideBtn = CCMenuItemSpriteExtra::create(spr, this, menu_selector(bestDisabler::onHideBtn));
-        enableSprite(hideBtn, isCurrentlyHidden);
-        toggleLayerDetails(isCurrentlyHidden);
+        enableSprite(hideBtn, isCurrentlyVisible);
+        toggleLayerDetails(isCurrentlyVisible);
         hideBtn->setPositionX(this->getChildByID("bottom-button-menu")->getContentWidth()/2);
 
         #ifdef GEODE_IS_MOBILE
@@ -141,9 +145,9 @@ class $modify(bestDisabler, PauseLayer) {
     }
  
     void onHideBtn(CCObject* sender) {
-        isCurrentlyHidden = !isCurrentlyHidden;
-        enableSprite(sender, isCurrentlyHidden);
-        toggleLayerDetails(isCurrentlyHidden);
+        isCurrentlyVisible = !isCurrentlyVisible;
+        enableSprite(sender, isCurrentlyVisible);
+        toggleLayerDetails(isCurrentlyVisible);
     } 
 
     // sets the enabled sprite color
@@ -170,8 +174,8 @@ class $modify(bestDisabler, PauseLayer) {
 
 $on_mod(Loaded) {
     if (Mod::get()->getSettingValue<bool>("SaveAcrossLevels")) {
-        isCurrentlyHidden = Mod::get()->getSavedValue<bool>("visibleBest", true);
+        isCurrentlyVisible = Mod::get()->getSavedValue<bool>("visibleBest", true);
     } else {
-        isCurrentlyHidden = true;
+        isCurrentlyVisible = !Mod::get()->getSettingValue<bool>("HideByDefault");
     }
 }
