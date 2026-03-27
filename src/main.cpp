@@ -1,14 +1,12 @@
 #include <Geode/Geode.hpp>
+#include <Geode/modify/PlayLayer.hpp>
+#include <Geode/modify/PauseLayer.hpp>
 using namespace geode::prelude;
 
-#include <Geode/modify/PlayLayer.hpp>
-
 void toggleLayerDetails(bool mode);
-
 bool isCurrentlyVisible;
 
 class $modify(bestFinder, PlayLayer) {
-
     struct Fields {
         CCNode* NewBestNode;
         CCNode* FadeLayer;
@@ -32,6 +30,7 @@ class $modify(bestFinder, PlayLayer) {
         PlayLayer::showNewBest(p0, p1, p2, p3, p4, p5);
 
         auto children = this->getChildren();
+        m_fields->NewBestNode = nullptr;
 
         for (int i = this->getChildrenCount() - 1; i >= 0; i--) {
             auto child = static_cast<CCNode*>(children->objectAtIndex(i));
@@ -44,7 +43,7 @@ class $modify(bestFinder, PlayLayer) {
 			break;
         }
 
-        if (Mod::get()->getSettingValue<bool>("HideWithoutPause")) {
+        if (Mod::get()->getSettingValue<bool>("HideWithoutPause") && m_fields->NewBestNode != nullptr) {
             toggleLayerDetails(isCurrentlyVisible);
         }
     }
@@ -52,7 +51,7 @@ class $modify(bestFinder, PlayLayer) {
     void resetLevel() {
         PlayLayer::resetLevel();
         if (!isCurrentlyVisible && !m_fields->saveAcrossAttempts) isCurrentlyVisible = true;
-        if (m_fields->NewBestNode != nullptr) {
+        if (isNewBest()) {
             m_fields->NewBestNode = nullptr;
             m_fields->FadeLayer = nullptr;
         }
@@ -99,19 +98,27 @@ void toggleLayerDetails(bool mode) {
     if (pl && pl->isNewBest()) {    
         if (auto BN = pl->getNewBestNode()) {
             if (BN != nullptr) BN->setVisible(mode);
+        } else {
+            return;
         }
+
+        if (pl->m_level->m_stars == 0) return;
 
         if (auto currency = pl->getChildByType<CurrencyRewardLayer>(0)) {
-            if (currency != nullptr) currency->setVisible(mode);
+            if (currency != nullptr) {
+                currency->setVisible(mode);
+
+                // fade layer only displays if the level is rated
+                if (auto FadeLay = pl->getFadeLayer()) {
+                    if (FadeLay != nullptr) FadeLay->setVisible(mode);        
+                }
+            };
         }
 
-        if (auto FadeLay = pl->getFadeLayer()) {
-            if (FadeLay != nullptr) FadeLay->setVisible(mode);        
-        }
+
     }
 }
 
-#include <Geode/modify/PauseLayer.hpp>
 class $modify(bestDisabler, PauseLayer) {
 
     void customSetup() {
@@ -153,6 +160,8 @@ class $modify(bestDisabler, PauseLayer) {
     // sets the enabled sprite color
     void enableSprite(CCObject* node, bool enable) {
         //TODO Find a better spot to put this
+        if (node == nullptr) return;
+        
         const ccColor3B greyScale = {.r = 90, .g = 90, .b = 90};
         const ccColor3B color = {.r = 255, .g = 255, .b = 255};
 

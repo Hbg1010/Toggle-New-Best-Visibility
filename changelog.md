@@ -1,3 +1,6 @@
+# 2.0.2
+- Should fix crashes
+
 # 2.0.1
 - Added setting to automatically hide new bests
 
