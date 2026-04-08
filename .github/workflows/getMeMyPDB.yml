@@ -41,8 +41,8 @@ jobs:
         with:
           # sdk: nightly
           # cli: nightly
-          # build-config: RelWithDebInfo
-          # export-pdb: true
+          build-config: RelWithDebInfo
+          export-pdb: true
           combine: true
           target: ${{ matrix.config.target }}
 
