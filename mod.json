@@ -1,5 +1,5 @@
 {
-	"geode": "5.4.1",
+	"geode": "5.5.3",
 	"gd": {
 		"win": "2.2081",
 		"android": "2.2081",
@@ -17,7 +17,7 @@
 	},
 	"issues": {
 		"url": "https://github.com/Hbg1010/Toggle-New-Best-Visibility/issues",
-		"info": "If you find any bugs, or have any feature requests, please post them on this github!"
+		"info": "If you find any bugs, or have any feature requests, please post them on this Github!"
 	},
 	"settings": {
 		"enable": {
