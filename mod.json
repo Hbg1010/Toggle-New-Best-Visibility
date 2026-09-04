@@ -8,7 +8,7 @@
 	},
 	"id": "hbg1010.hidenewbest",
 	"name": "New Best Visibility Toggle",
-	"version": "v2.0.3",
+	"version": "v2.0.4",
 	"developer": "Hbg1010",
 	"description": "Hide new best GUI on pause menu",
 	"links": {
@@ -48,7 +48,7 @@
 		"SaveAcrossAttempts": {
 			"type": "bool",
 			"name": "Save Across Attempts",
-			"default": true,
+			"default": false,
 			"description": "Saves Your New Best visibility setting across Attempts"
 		},
 		"SaveAcrossLevels": {

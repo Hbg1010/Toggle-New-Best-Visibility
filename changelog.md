@@ -1,3 +1,6 @@
+# 2.0.4
+- made save across attempts false by default
+
 # 2.0.3
 - Attempted to fix more rare crashes again. 
 
