@@ -1,17 +1,20 @@
 #include <Geode/Geode.hpp>
 #include <Geode/modify/PlayLayer.hpp>
 #include <Geode/modify/PauseLayer.hpp>
+
 using namespace geode::prelude;
 
 void toggleLayerDetails(bool mode);
-bool isCurrentlyVisible;
+bool isCurrentlyVisible = true;
 
 class $modify(bestFinder, PlayLayer) {
     struct Fields {
-        CCNode* NewBestNode;
-        CCNode* FadeLayer;
-        bool saveAcrossAttempts;
+        CCNode* NewBestNode = nullptr;
+        CCNode* FadeLayer = nullptr;
+        bool saveAcrossAttempts = false;
     };
+
+    /* Hooks */
 
     bool init(GJGameLevel* level, bool useReplay, bool dontCreateObjects) {
         if (!PlayLayer::init(level, useReplay, dontCreateObjects)) return false;
@@ -29,19 +32,10 @@ class $modify(bestFinder, PlayLayer) {
     void showNewBest(bool p0, int p1, int p2, bool p3, bool p4, bool p5) {
         PlayLayer::showNewBest(p0, p1, p2, p3, p4, p5);
 
-        auto children = this->getChildren();
         m_fields->NewBestNode = nullptr;
+        m_fields->FadeLayer = nullptr;
 
-        for (int i = this->getChildrenCount() - 1; i >= 0; i--) {
-            auto child = static_cast<CCNode*>(children->objectAtIndex(i));
-            // bar for bar taken from Ery, 
-            if (!child || child == this->m_uiLayer) continue; // skip UILayer
-			if (child->getZOrder() != 100) continue;
-			if (child->getChildrenCount() < 2) continue;
-            child->setUserObject("new-best-node"_spr, CCBool::create(true)); // set the user object to identify the node
-            m_fields->NewBestNode = child;
-			break;
-        }
+        setNewBestNode();
 
         if (Mod::get()->getSettingValue<bool>("HideWithoutPause") && m_fields->NewBestNode != nullptr) {
             toggleLayerDetails(isCurrentlyVisible);
@@ -51,7 +45,8 @@ class $modify(bestFinder, PlayLayer) {
     void resetLevel() {
         PlayLayer::resetLevel();
         if (!isCurrentlyVisible && !m_fields->saveAcrossAttempts) isCurrentlyVisible = true;
-        if (isNewBest()) {
+
+        if (m_fields->NewBestNode != nullptr || m_fields->FadeLayer != nullptr) {
             m_fields->NewBestNode = nullptr;
             m_fields->FadeLayer = nullptr;
         }
@@ -64,6 +59,8 @@ class $modify(bestFinder, PlayLayer) {
         PlayLayer::onExit();
     }
 
+    /* functions */
+
     bool isNewBest() {
         return m_fields->NewBestNode != nullptr;
     }
@@ -72,37 +69,65 @@ class $modify(bestFinder, PlayLayer) {
         return m_fields->NewBestNode;
     }
 
+    bool hasStars() {
+        return m_level->m_stars > 0;
+    }
+
     // I don't love this code, however, it only generates the fade layer after a bit
     // and it cannot be indexed starting from 0 for whatever reason.
     CCNode* getFadeLayer() {
         if (m_fields->FadeLayer == nullptr) {
             auto children = this->getChildren();
             for (int i = this->getChildrenCount() - 1; i >= 0; i--) {
-                auto child = static_cast<CCNode*>(children->objectAtIndex(i));
-                if (!child || child == this->m_uiLayer) continue; // skip UILayer
-                if (child->getZOrder() != 99) continue;
-                if (child->getChildrenCount() > 0) continue;
-                m_fields->FadeLayer = child;
-                break;
+                if (auto child = static_cast<CCNode*>(children->objectAtIndex(i))) {
+                    if (child == this->m_uiLayer) continue; // skip UILayer
+                    if (child->getZOrder() != 99) continue;
+                    if (child->getChildrenCount() > 0) continue; // <----
+                    m_fields->FadeLayer = child;
+                    break;
+                }
             }
         }
 
         return m_fields->FadeLayer;
+    }
+
+    void setNewBestNode() {
+        if (m_fields->NewBestNode == nullptr) {
+            auto children = this->getChildren();
+            for (int i = this->getChildrenCount() - 1; i >= 0; i--) {
+                auto child = static_cast<CCNode*>(children->objectAtIndex(i));
+                // bar for bar taken from Ery, thanks :)
+                if (!child || child == this->m_uiLayer) continue; // skip UILayer
+                if (child->getZOrder() != 100) continue;
+                if (child->getChildrenCount() < 2) continue;
+                child->setUserObject("new-best-node"_spr, CCBool::create(true)); // set the user object to identify the node
+                m_fields->NewBestNode = child;
+                break;
+            }
+        }
+    }
+
+    CCNode* getBestNode() {
+        setNewBestNode();
+        return m_fields->NewBestNode;
     }
 };
 
 // hides new best
 void toggleLayerDetails(bool mode) {
     // apply changes to play layer
-    bestFinder* pl = reinterpret_cast<bestFinder*>(bestFinder::get());
+    bestFinder* pl = geode::cast::modify_cast<bestFinder*>(bestFinder::get());
+
     if (pl && pl->isNewBest()) {    
-        if (auto BN = pl->getNewBestNode()) {
+        // once the layer resets, it safely attempts to obtain the node 
+        if (auto BN = pl->getBestNode()) {
             if (BN != nullptr) BN->setVisible(mode);
         } else {
             return;
         }
 
-        if (pl->m_level->m_stars == 0) return;
+        if (!pl->hasStars()) return;
 
         if (auto currency = pl->getChildByType<CurrencyRewardLayer>(0)) {
             if (currency != nullptr) {
@@ -114,21 +139,18 @@ void toggleLayerDetails(bool mode) {
                 }
             };
         }
-
-
     }
 }
 
 class $modify(bestDisabler, PauseLayer) {
-
     void customSetup() {
         PauseLayer::customSetup();
         auto modPtr = Mod::get();
         if (!modPtr->getSettingValue<bool>("enable")) return;
 
         // checks if the playlayer exists + if there's a new best (bc of a setting)
-        if (bestFinder* pl = reinterpret_cast<bestFinder*>(bestFinder::get())) {
-            if (modPtr->getSettingValue<bool>("showOnlyOnBest") && !pl->isNewBest()) return;
+        if (bestFinder* pl = geode::cast::modify_cast<bestFinder*>(bestFinder::get())) {
+            if (pl && modPtr->getSettingValue<bool>("showOnlyOnBest") && !pl->isNewBest()) return;
         } else {
             return;
         }
@@ -139,14 +161,17 @@ class $modify(bestDisabler, PauseLayer) {
         auto hideBtn = CCMenuItemSpriteExtra::create(spr, this, menu_selector(bestDisabler::onHideBtn));
         enableSprite(hideBtn, isCurrentlyVisible);
         toggleLayerDetails(isCurrentlyVisible);
-        hideBtn->setPositionX(this->getChildByID("bottom-button-menu")->getContentWidth()/2);
 
-        #ifdef GEODE_IS_MOBILE
-        hideBtn->setPositionY(hideBtn->getScaledContentHeight()*2/3);
-        #else
-        hideBtn->setPositionY(hideBtn->getScaledContentHeight()/2);
-        #endif
-        this->getChildByID("bottom-button-menu")->addChild(hideBtn);
+        // just in case this could cause a crash
+        if (this->getChildByID("bottom-button-menu")) {
+            hideBtn->setPositionX(this->getChildByID("bottom-button-menu")->getContentWidth()/2);
+            #ifdef GEODE_IS_MOBILE
+            hideBtn->setPositionY(hideBtn->getScaledContentHeight()*2/3);
+            #else
+            hideBtn->setPositionY(hideBtn->getScaledContentHeight()/2);
+            #endif
+            this->getChildByID("bottom-button-menu")->addChild(hideBtn);
+        }
         
         hideBtn->setID("Hide_Best_Btn"_spr);
     }
@@ -176,8 +201,8 @@ class $modify(bestDisabler, PauseLayer) {
 
     // shows the gui on resume if the setting is enabled
     void onResume(CCObject* sender) {
-        PauseLayer::onResume(sender);
         if (Mod::get()->getSettingValue<bool>("showOnResume")) toggleLayerDetails(true);
+        PauseLayer::onResume(sender); 
     }
 };
 

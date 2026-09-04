@@ -1,3 +1,6 @@
+# 2.0.3
+- Attempted to fix more rare crashes again. 
+
 # 2.0.2
 - Should fix crashes
 
