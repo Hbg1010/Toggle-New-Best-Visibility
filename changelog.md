@@ -1,3 +1,6 @@
+# 2.0.5
+-  Geode 6 and 2.209 support
+
 # 2.0.4
 - made save across attempts false by default
 

@@ -16,8 +16,8 @@ class $modify(bestFinder, PlayLayer) {
 
     /* Hooks */
 
-    bool init(GJGameLevel* level, bool useReplay, bool dontCreateObjects) {
-        if (!PlayLayer::init(level, useReplay, dontCreateObjects)) return false;
+    bool init(GJGameLevel* level, bool dontCreateObjects) {
+        if (!PlayLayer::init(level, dontCreateObjects)) return false;
         // if people want this to be editable between attempts I could do that later...
         Mod* ModPtr = Mod::get();
         m_fields->saveAcrossAttempts = Mod::get()->getSettingValue<bool>("SaveAcrossAttempts");
